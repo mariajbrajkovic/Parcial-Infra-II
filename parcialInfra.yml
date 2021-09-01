@@ -1,0 +1,46 @@
+# Parcial María Julia Brajkovic
+
+---
+- hosts: localhost
+  # No corresponde/ no es necesario --> connection: local
+  tasks:
+  - name: Crear grupo de seguridad con HTTPS, HTTP y SSH
+    ec2_group:
+      name: sg_profe
+      # Preferentemente, y consultando la documentación, sugiero poner la descripción acá arriba
+      description: sg con las reglas
+      vpc_id: vpc-7a117c07
+      region: us-west-1
+      rules:
+        - proto: tcp
+          ports:
+          - 443
+          - 80
+          - 23
+          - 8080
+          cidr_ip: 0.0.0.0/0
+          rule_desc: Acepto todo el trafico
+  - name: Creamos nuestro servidor
+    ec2:
+      # Preferentemente, y consultando la documentación, sugiero poner las keys acá arriba
+      key_name: millave
+      # Error: debería coincidir la región con la anterior
+      region: us-west-1
+      instance_type: t2.micro
+      image: ami-0c2b8ca1dad447f8a
+      instance_tags:
+        Name: Instancia_Profe
+      wait: yes
+      wait_timeout: 500
+      group: grupo_creado
+      volumes:
+        - device_name: /dev/xvda
+          volume_type: gp2
+          volume_size: 8
+      vpc_subnet_id: subnet-82bceedd
+      # acá debería decir que yes porque lo uso abajo al ip público
+      assign_public_ip: yes
+    # No corresponde --> register: info
+  - name: DNS Publico de nuestro servidor
+    debug:
+      msg: "La ip publica es {{ info.instances[0].public_ip }} y su DNS es {{ info.instances[0].public_dns_name }}"
